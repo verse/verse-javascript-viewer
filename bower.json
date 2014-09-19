@@ -1,0 +1,35 @@
+{
+  "name": "verse-javascript-viewer",
+  "version": "0.0.1",
+  "homepage": "https://github.com/verse/verse-javascript-viewer",
+  "authors": [
+    "Jiri Hnidek <jiri.hnidek@tul.cz>"
+  ],
+  "description": "WebGL viewer of 3D data shared at Verse server by Blender.",
+  "main": "js/app.js",
+  "moduleType": [
+    "node"
+  ],
+  "keywords": [
+    "verse",
+    "threejs",
+    "websocket",
+    "3D",
+    "blender"
+  ],
+  "license": "GPL 2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.2.0",
+    "threejs": "*"
+  },
+  "devDependencies": {
+    "verse": "*"
+  }
+}

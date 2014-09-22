@@ -19,6 +19,10 @@ $(document).ready(function() {
 		$('.jumbotron').append($login_div);
 	};
 
+	// Create jumbotron div
+	var $jumbotron_div = $('<div class="jumbotron"></div>');
+	$('.container').append($jumbotron_div);
+
 	if (!window.WebGLRenderingContext) {
 		// The browser doesn't even know what WebGL is
 		var $alert_div = $('\
@@ -29,19 +33,87 @@ $(document).ready(function() {
 		$('.container').prepend($alert_div);
 		create_login_form(false);
 	} else {
-		// var $div = $('\
-		// <div class="alert alert-success" role="alert">\
-		// <strong>Great:</strong> Your browser supports <a href="http://get.webgl.org/" class="alert-link">WebGL</a>!\
-		// </div>\
-		// ');
-		// $('.container').prepend($div);
 		create_login_form(true);
 	}
 
 	$('.form-login').submit(function(event) {
-		// TODO: connect to Verse server
-		console.log($('input[name=username]').val());
-		console.log($('input[name=password]').val());
+		// Connect to Verse server
+
+		var config,  dataHandler;
+
+		console.log(verse);
+
+		dataHandler = function dataHandler (data) {
+			if (data.CMD === 'NODE_CREATE') {
+				verse.subscribeNode(data.NODE_ID);
+				console.log('subscribed node ' + data.NODE_ID);
+			}
+			else if (data.CMD === 'TAG_GROUP_CREATE') {
+				verse.subscribeTagGroup(data.NODE_ID, data.TAG_GROUP_ID);
+				console.info('subscribed tagGroup nodeId =' + data.NODE_ID + ' tagGroupId = ' + data.TAG_GROUP_ID);
+			}
+			else if (data.CMD === 'LAYER_CREATE') {
+				verse.subscribeLayer(data.NODE_ID, data.LAYER_ID);
+				console.info('subscribed Layer nodeId =' + data.NODE_ID + ' layerId = ' + data.LAYER_ID);
+			}
+			else {
+				console.log(data);
+			}
+		};
+
+		config = {
+			uri: 'ws://localhost:23456',
+			version: 'v1.verse.tul.cz',
+			username: $('input[name=username]').val(),
+			passwd: $('input[name=password]').val(),
+			dataCallback: dataHandler,
+			connectionTerminatedCallback: function(event) {
+				/*
+				 * callback function for end of session handling
+				 * called when onClose websocket event is fired
+				 */
+				console.info('[Disconnected], Code:' + event.code + ', Reason: ' + event.reason);
+
+				// Create allert message
+				var $div = $('\
+					<div class="alert alert-danger alert-dismissible" role="alert">\
+					<strong>Sorry:</strong> Connection with Verse server was terminated!\
+					</div>\
+				');
+				$('.container').prepend($div);
+				create_login_form(true);
+			},
+			connectionAcceptedCallback: function(userInfo) {
+				/*
+				 * callback function for connection accepted event
+				 * called when negotiation process is finished
+				 * @param userInfo object
+				 */
+				console.info('User ID: ' + userInfo.USER_ID);
+				console.info('Avatar ID: ' + userInfo.AVATAR_ID);
+
+				// Create dismissible 'info' message
+				var $div = $('\
+					<div class="alert alert-success alert-dismissible" role="alert">\
+					<button type="button" class="close" data-dismiss="alert">\
+					<span aria-hidden="true">&times;</span>\
+					<span class="sr-only">Close</span></button>\
+					<strong>Great:</strong> Connected to Verse server!\
+					</div>\
+				');
+				$('.container').prepend($div);
+				// Close login form
+				$('.jumbotron').remove();
+				// TODO: do not close jumbotron, but create in jumbotron list of available
+				// scenes
+			}
+
+		};
+
+		verse.init(config);
+
+		console.info(verse);
+		
 		event.preventDefault();
 	});
 });

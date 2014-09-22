@@ -2,11 +2,16 @@ $(document).ready(function() {
 	
 	// This function creates login form
 	function create_login_form (enabled) {
+		// Create jumbotron div
+		var $jumbotron_div = $('<div class="jumbotron"></div>');
+		$('.container').append($jumbotron_div);
+		// Shouild it be disabled or enabled
 		if(enabled === false) {
 			disabled = 'disabled';
 		} else {
 			disabled = '';
 		}
+		// Create login form
 		var $login_div = $('\
 			<form class="form-login" role="form">\
 				<h2 class="form-login-heading">Verse Server Login</h2>\
@@ -19,9 +24,17 @@ $(document).ready(function() {
 		$('.jumbotron').append($login_div);
 	};
 
-	// Create jumbotron div
-	var $jumbotron_div = $('<div class="jumbotron"></div>');
-	$('.container').append($jumbotron_div);
+	function create_alert (alert_type, message) {
+		var $div = $('\
+			<div class="alert ' + alert_type + ' alert-dismissible" role="alert">\
+			<button type="button" class="close" data-dismiss="alert">\
+			<span aria-hidden="true">&times;</span>\
+			<span class="sr-only">Close</span></button>\
+			' + message + '\
+			</div>\
+		');
+		$('.container').prepend($div);
+	};
 
 	if (!window.WebGLRenderingContext) {
 		// The browser doesn't even know what WebGL is
@@ -37,9 +50,11 @@ $(document).ready(function() {
 	}
 
 	$('.form-login').submit(function(event) {
-		// Connect to Verse server
+		// Close login form
+		$('.jumbotron').remove();
 
-		var config,  dataHandler;
+		// Connect to Verse server
+		var config, dataHandler;
 
 		console.log(verse);
 
@@ -75,12 +90,16 @@ $(document).ready(function() {
 				console.info('[Disconnected], Code:' + event.code + ', Reason: ' + event.reason);
 
 				// Create allert message
-				var $div = $('\
-					<div class="alert alert-danger alert-dismissible" role="alert">\
-					<strong>Sorry:</strong> Connection with Verse server was terminated!\
-					</div>\
-				');
-				$('.container').prepend($div);
+				if (event.code === 1001) {
+					create_alert('alert-danger', '<strong>Sorry:</strong> Verse server was terminated!');
+				} else if (event.code === 1002) {
+					create_alert('alert-danger', '<strong>Sorry:</strong> Connection with Verse server timed-out!');
+				} else if (event.code === 1006) {
+					create_alert('alert-danger', '<strong>Sorry:</strong> Verse server is not running!');
+				} else {
+					create_alert('alert-danger', '<strong>Sorry:</strong> Connection with Verse server was lost!');
+				};
+
 				create_login_form(true);
 			},
 			connectionAcceptedCallback: function(userInfo) {
@@ -93,19 +112,21 @@ $(document).ready(function() {
 				console.info('Avatar ID: ' + userInfo.AVATAR_ID);
 
 				// Create dismissible 'info' message
-				var $div = $('\
-					<div class="alert alert-success alert-dismissible" role="alert">\
-					<button type="button" class="close" data-dismiss="alert">\
-					<span aria-hidden="true">&times;</span>\
-					<span class="sr-only">Close</span></button>\
-					<strong>Great:</strong> Connected to Verse server!\
-					</div>\
-				');
-				$('.container').prepend($div);
-				// Close login form
-				$('.jumbotron').remove();
-				// TODO: do not close jumbotron, but create in jumbotron list of available
-				// scenes
+				create_alert('alert-success', '<strong>Great:</strong> Connected to Verse server!');
+				// TODO: Create in jumbotron list of available scenes
+			},
+			errorCallback: function(error) {
+				/*
+				 * Error callback 
+				 * called when user auth fails
+				 * @param error string command name
+				 */
+				console.error(error);
+
+				// Create allert message
+				create_alert('alert-danger', '<strong>Sorry:</strong> Connection with Verse server was terminated');
+
+				create_login_form(true);
 			}
 
 		};

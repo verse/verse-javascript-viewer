@@ -162,7 +162,9 @@ controls.addEventListener( 'change', render );
 // Create renderer
 var renderer = new THREE.WebGLRenderer( { antialias: true } );
 renderer.setSize( window.innerWidth, window.innerHeight );
-document.body.appendChild( renderer.domElement );
+var my_canvas = document.getElementById("my-canvas");
+my_canvas.appendChild( renderer.domElement );
+//document.body.appendChild( renderer.domElement );
 
 // Crete geometry for faces from hash table of vertices and faces
 face_geometry = create_face_geometry(cube_vertices_holes, cube_faces_holes);

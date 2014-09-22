@@ -38,8 +38,10 @@ $(document).ready(function() {
 		create_login_form(true);
 	}
 
-	$('#login_but').click(function() {
+	$('.form-login').submit(function(event) {
 		// TODO: connect to Verse server
-		console.log(verse);
+		console.log($('input[name=username]').val());
+		console.log($('input[name=password]').val());
+		event.preventDefault();
 	});
 });

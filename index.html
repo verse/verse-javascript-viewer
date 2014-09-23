@@ -22,7 +22,7 @@
 	<body>
 		<div id="my-canvas">
 			<div class="container">
-				<!-- TODO: add header with App name and Logout item -->
+				<!-- TODO: add header with App name and Login/Logout item -->
 				<div class="jumbotron">
 					<form class="form-login" role="form">
 						<h2 class="form-login-heading">Verse Server Login</h2>
@@ -33,9 +33,13 @@
 							<label for="server">Server address</label>
 							<input id="server" type="text" class="form-control" name="server" value="ws://verse.tul.cz:23456">
 						</div>
-						<button id="login_but" class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+						<button id="login_but" class="btn btn-lg btn-primary btn-block" type="submit">Login in</button>
 					</form>
-					<!-- TODO: Create empty list of available scenes shared at Verse server -->
+					<!--
+					TODO: Create empty list of available scenes shared at Verse server.
+					This list should be invisible by default and it should fade in after
+					successful login. This list should contain Subscribe button too.
+					-->
 				</div>
 			</div>
 		</div>

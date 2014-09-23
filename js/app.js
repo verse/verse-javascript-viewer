@@ -25,33 +25,79 @@ $(document).ready(function() {
 
 	$('.form-login').submit(function(event) {
 		// Connect to Verse server
-		var config, dataHandler, scene;
+		var config, dataHandler, scene, objects, meshes;
 
 		console.log(verse);
 
 		dataHandler = function dataHandler (data) {
+			// Nodes
 			if (data.CMD === 'NODE_CREATE') {
 				verse.subscribeNode(data.NODE_ID);
-				console.log('subscribed node ' + data.NODE_ID);
+				console.log(data);
+				console.log('Subscribing to node: ' + data.NODE_ID);
+
+				// Debug print
+				if (data.CUSTOM_TYPE === 123) {
+					console.log('Blender Scene Node');
+				} else if (data.CUSTOM_TYPE === 124) {
+					console.log('Blender Scene Data Node');
+				// Is it object?
+				} else if (data.CUSTOM_TYPE === 125) {
+					console.log('Blender 3D Object');
+					// Create Three.js object and add it to hash list of objects
+					// objects[data.NODE_ID] = {
+					// 	'obj': new THREE.Object3D(),
+					// 	'tg_trans_id': undefined
+					// };
+					// // Add object to the scene
+					// scene.add( objects[data.NODE_ID].obj );
+				// Is it Mesh?
+				} else if (data.CUSTOM_TYPE === 126) {
+					console.log('Blender Mesh');
+					// // Create empty geometry
+					// var geometry = new THREE.Geometry();
+					// // Create simple material
+					// var solid_material = new THREE.MeshLambertMaterial( { color: 0x5ce5ff } );
+					// // Create mesh and add it to hash list of meshes
+					// meshes[data.NODE_ID] = {
+					// 	'mesh': new THREE.Mesh(geometry, material),
+					// 	'vertices': {},
+					// 	'edges': {},
+					// 	'faces': {}
+					// };
+					// // Append mesh to Three.js object
+					// objects[data.PARENT_NODE_ID].obj.add(meshes[data.NODE_ID].mesh);
+				}
 			}
+			// Tag Groups
 			else if (data.CMD === 'TAG_GROUP_CREATE') {
 				verse.subscribeTagGroup(data.NODE_ID, data.TAG_GROUP_ID);
-				console.info('subscribed tagGroup nodeId =' + data.NODE_ID + ' tagGroupId = ' + data.TAG_GROUP_ID);
+				console.log(data);
+				// console.info('Subscribing to tag group: node_id = ' + data.NODE_ID + ' tag_group_id = ' + data.TAG_GROUP_ID);
+
+				// // Is it tag group with object transformation?
+				// if(objects[data.NODE_ID] !== undefined && date.CUSTOM_TYPE === 0) {
+				// 	objects[data.NODE_ID].tg_trans_id = data.TAG_GROUP_ID;
 			}
+			// Tags
+			else if (data.CMD === 'TAG_CREATE') {
+				// TODO
+				console.log(data);
+			}
+			// Layers
 			else if (data.CMD === 'LAYER_CREATE') {
 				verse.subscribeLayer(data.NODE_ID, data.LAYER_ID);
-				console.info('subscribed Layer nodeId =' + data.NODE_ID + ' layerId = ' + data.LAYER_ID);
+				console.info('Subscribing to layer: node_id = ' + data.NODE_ID + ' layer_id = ' + data.LAYER_ID);
 			}
 			else {
 				console.log(data);
 			}
 		};
 
+		// Get values from form
 		var username = $('#username').val();
 		var password = $('#password').val();
 		var serverURI = $('#server').val();
-
-		console.log(username, password, serverURI);
 
 		config = {
 			uri: serverURI,
@@ -68,13 +114,17 @@ $(document).ready(function() {
 
 				// Create allert message
 				if (event.code === 1001) {
-					create_alert('alert-danger', '<strong>Sorry:</strong> Verse server was terminated!');
+					create_alert('alert-danger',
+						'<strong>Sorry:</strong> Verse server ' + config.uri + ' was terminated!');
 				} else if (event.code === 1002) {
-					create_alert('alert-danger', '<strong>Sorry:</strong> Connection with Verse server timed-out!');
+					create_alert('alert-danger',
+						'<strong>Sorry:</strong> Connection with Verse server ' + config.uri + ' timed-out!');
 				} else if (event.code === 1006) {
-					create_alert('alert-danger', '<strong>Sorry:</strong> Verse server is not running!');
+					create_alert('alert-danger',
+						'<strong>Sorry:</strong> Verse server ' + config.uri + ' is not running!');
 				} else {
-					create_alert('alert-danger', '<strong>Sorry:</strong> Connection with Verse server was lost!');
+					create_alert('alert-danger',
+						'<strong>Sorry:</strong> Connection with Verse server ' + config.uri + ' was lost (error: ' + event.code + ')!');
 				};
 
 				$('canvas').remove();

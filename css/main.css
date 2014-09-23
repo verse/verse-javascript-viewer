@@ -18,7 +18,7 @@ canvas {
 }
 
 /* Customize container */
-@media (min-width: 768px) {
+@media (min-width: 530px) {
 	.container {
 		max-width: 530px;
 	}

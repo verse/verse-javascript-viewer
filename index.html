@@ -8,10 +8,11 @@
     	<meta name="author" content="Jiri Hnidek">
 		<title>Verse WebGL Viewer</title>
 		<!-- Javascript libraries -->
-		<script src="bower_components/threejs/build/three.min.js"></script>
-		<script src="bower_components/jquery/dist/jquery.min.js"></script>
-		<script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-		<script src="bower_components/verse/build/verse.standalone.min.js"></script>
+		<script type="text/javascript" src="bower_components/threejs/build/three.min.js"></script>
+		<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+		<script type="text/javascript" src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="bower_components/verse/build/verse.standalone.min.js"></script>
+		<script type="text/javascript" src="js/TrackballControls.js"></script>
 		<script type="text/javascript" src="js/app.js"></script>
 		<!-- CSS styles -->
 		<link rel="stylesheet" type="text/css" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
@@ -20,11 +21,22 @@
 	</head>
 	<body>
 		<div id="my-canvas">
-			<div class="container"></div>
+			<div class="container">
+				<div class="jumbotron">
+					<form class="form-login" role="form">
+						<h2 class="form-login-heading">Verse Server Login</h2>
+						<input id="username" type="text" class="form-control" name="username" placeholder="Username" required autofocus>
+						<input id="password" type="password" class="form-control" name="password" placeholder="Password">
+						<span class="help-block">Type your username and password to login.</span>
+						<div class="form-group">
+							<label for="server">Server address</label>
+							<input id="server" type="text" class="form-control" name="server" value="ws://verse.tul.cz:23456">
+						</div>
+						<button id="login_but" class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+					</form>
+					<!-- TODO: Create empty list of available scenes shared at Verse server -->
+				</div>
+			</div>
 		</div>
-		<!--
-		<script src="js/TrackballControls.js"></script>
-		<script src="js/threejs_app.js"></script>
-		-->
 	</body>
 </html>

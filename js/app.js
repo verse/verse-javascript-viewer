@@ -68,8 +68,11 @@ $(document).ready(function() {
 					// Create mesh and add it to hash list of meshes
 					meshes[data.NODE_ID] = {
 						'mesh': new THREE.Mesh(geometry, solid_material),
+						'layer_vertices_id': undefined,
 						'vertices': {},
+						'layer_edges_id': undefined,
 						'edges': {},
+						'layer_faces_id': undefined,
 						'faces': {}
 					};
 					// Append mesh to Three.js object
@@ -125,10 +128,26 @@ $(document).ready(function() {
 			// Layers
 			else if (data.CMD === 'LAYER_CREATE') {
 				verse.subscribeLayer(data.NODE_ID, data.LAYER_ID);
+				console.log(data);
 				console.info('Subscribing to layer: node_id = ' + data.NODE_ID + ' layer_id = ' + data.LAYER_ID);
+
+				if(meshes[data.NODE_ID] !== undefined && data.CUSTOM_TYPE === 0) {
+					console.log('Layer with vertices.');
+					meshes[data.NODE_ID].layer_vertices_id = data.LAYER_ID;
+				}
+
+				if(meshes[data.NODE_ID] !== undefined && data.CUSTOM_TYPE === 1) {
+					console.log('Layer with edges.');
+					meshes[data.NODE_ID].layer_edges_id = data.LAYER_ID;
+				}
+
+				if(meshes[data.NODE_ID] !== undefined && data.CUSTOM_TYPE === 2) {
+					console.log('Layer with faces.');
+					meshes[data.NODE_ID].layer_faces_id = data.LAYER_ID;
+				}
 			}
 			else if (data.CMD === 'LAYER_SET_REAL32') {
-				// TODO: vertex position, topology: edges and faces
+				// TODO: fill THREE.js geometry with vertex position, topology: edges and faces
 				console.log(data);
 			}
 			else {

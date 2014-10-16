@@ -131,24 +131,45 @@ $(document).ready(function() {
 				console.log(data);
 				console.info('Subscribing to layer: node_id = ' + data.NODE_ID + ' layer_id = ' + data.LAYER_ID);
 
+				// Layer with vertices was created
 				if(meshes[data.NODE_ID] !== undefined && data.CUSTOM_TYPE === 0) {
 					console.log('Layer with vertices.');
 					meshes[data.NODE_ID].layer_vertices_id = data.LAYER_ID;
 				}
 
+				// Layer with edges was created
 				if(meshes[data.NODE_ID] !== undefined && data.CUSTOM_TYPE === 1) {
 					console.log('Layer with edges.');
 					meshes[data.NODE_ID].layer_edges_id = data.LAYER_ID;
 				}
 
+				// Layer with faces was created
 				if(meshes[data.NODE_ID] !== undefined && data.CUSTOM_TYPE === 2) {
 					console.log('Layer with faces.');
 					meshes[data.NODE_ID].layer_faces_id = data.LAYER_ID;
 				}
 			}
-			else if (data.CMD === 'LAYER_SET_REAL32') {
-				// TODO: fill THREE.js geometry with vertex position, topology: edges and faces
+			else if (data.CMD === 'LAYER_SET_UINT32') {
+				// TODO: fill THREE.js geometry with topology: edges and faces
 				console.log(data);
+				if(meshes[data.NODE_ID] !== undefined && meshes[data.NODE_ID].layer_edges_id === data.LAYER_ID) {
+					console.log('Edge indexes: ', + data.VALUES[0] + ', ' + data.VALUES[1]);
+				}
+				else if(meshes[data.NODE_ID] !== undefined && meshes[data.NODE_ID].layer_faces_id === data.LAYER_ID) {
+					console.log('Faces indexes: ', + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2] + ', ' + data.VALUES[3]);	
+				}
+			}
+			else if (data.CMD === 'LAYER_SET_REAL32') {
+				// TODO: bounding box
+				console.log(data);
+			}
+			else if (data.CMD === 'LAYER_SET_REAL64') {
+				// TODO: fill THREE.js geometry with vertex position
+				console.log(data);
+
+				if(meshes[data.NODE_ID] !== undefined && meshes[data.NODE_ID].layer_vertices_id === data.LAYER_ID) {
+					console.log('Vertex position: ' + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2]);
+				}
 			}
 			else {
 				console.log(data);

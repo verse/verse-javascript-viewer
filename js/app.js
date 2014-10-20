@@ -61,13 +61,18 @@ $(document).ready(function() {
 				// Is it Mesh?
 				} else if (data.CUSTOM_TYPE === 126) {
 					console.log('Blender Mesh:');
-					// Create empty geometry
-					var geometry = new THREE.Geometry();
-					// Create simple material
+					// Create empty face geometry
+					face_geometry = create_face_geometry({}, {});
+					// Create empty edge geometry
+					edge_geometry = create_edge_geometry({}, {});
+					// Create simple material for faces
 					var solid_material = new THREE.MeshLambertMaterial( { color: 0x5ce5ff } );
+					// Create simple material for edges
+					var edge_material = new THREE.LineBasicMaterial( { color: 0xffffff } );
 					// Create mesh and add it to hash list of meshes
 					meshes[data.NODE_ID] = {
-						'mesh': new THREE.Mesh(geometry, solid_material),
+						'face_mesh': new THREE.Mesh(face_geometry, solid_material),
+						'edge_mesh': new THREE.Mesh(edge_geometry, edge_material, THREE.LinePieces),
 						'layer_vertices_id': undefined,
 						'vertices': {},
 						'layer_edges_id': undefined,
@@ -75,8 +80,10 @@ $(document).ready(function() {
 						'layer_faces_id': undefined,
 						'faces': {}
 					};
-					// Append mesh to Three.js object
-					objects[data.PARENT_ID].obj.add(meshes[data.NODE_ID].mesh);
+					// Append face_mesh to Three.js object
+					objects[data.PARENT_ID].obj.add(meshes[data.NODE_ID].face_mesh);
+					// Append edge_mesh to Three.js object
+					objects[data.PARENT_ID].obj.add(meshes[data.NODE_ID].edge_mesh);
 				}
 				console.log(data);
 				console.log('Subscribing to node: ' + data.NODE_ID + ' ...');
@@ -105,21 +112,42 @@ $(document).ready(function() {
 					objects[data.NODE_ID].tag_pos_id = data.TAG_ID;
 				}
 
-				// Tag including scale
-				if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id !== undefined && data.CUSTOM_TYPE === 1) {
-					console.log('Tag with scale created.');
-					objects[data.NODE_ID].tag_scale_id = data.TAG_ID;
-				}
-
 				// Tag including rotation
-				if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id !== undefined && data.CUSTOM_TYPE === 2) {
+				if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id !== undefined && data.CUSTOM_TYPE === 1) {
 					console.log('Tag with rotation created.');
 					objects[data.NODE_ID].tag_rot_id = data.TAG_ID;
 				}
+
+				// Tag including scale
+				if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id !== undefined && data.CUSTOM_TYPE === 2) {
+					console.log('Tag with scale created.');
+					objects[data.NODE_ID].tag_scale_id = data.TAG_ID;
+				}
 			}
 			else if (data.CMD === 'TAG_SET_REAL32') {
-				// TODO: set object position, scale and rotation
+				// Set object position, scale and rotation
 				console.log(data);
+
+				// Position
+				if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id === data.TAG_GROUP_ID && objects[data.NODE_ID].tag_pos_id === data.TAG_ID) {
+					console.log('Object position: ' + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2]);
+					objects[data.NODE_ID].obj.position.x = data.VALUES[0];
+					objects[data.NODE_ID].obj.position.y = data.VALUES[1];
+					objects[data.NODE_ID].obj.position.z = data.VALUES[2];
+				// Rotation
+				} else if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id === data.TAG_GROUP_ID && objects[data.NODE_ID].tag_rot_id === data.TAG_ID) {
+					console.log('Object rotation: ' + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2] + ', ' + data.VALUES[3]);
+					objects[data.NODE_ID].obj.quaternion.x = data.VALUES[0];
+					objects[data.NODE_ID].obj.quaternion.y = data.VALUES[1];
+					objects[data.NODE_ID].obj.quaternion.z = data.VALUES[2];
+					objects[data.NODE_ID].obj.quaternion.w = data.VALUES[3];
+				// Scale
+				} else if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id === data.TAG_GROUP_ID && objects[data.NODE_ID].tag_scale_id === data.TAG_ID) {
+					console.log('Object scale: ' + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2]);
+					objects[data.NODE_ID].obj.scale.x = data.VALUES[0];
+					objects[data.NODE_ID].obj.scale.y = data.VALUES[1];
+					objects[data.NODE_ID].obj.scale.z = data.VALUES[2];
+				}
 			}
 			else if (data.CMD === 'TAG_SET_STRING8') {
 				// TODO: name of object and mesh

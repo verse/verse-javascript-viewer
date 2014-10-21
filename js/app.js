@@ -66,13 +66,16 @@ $(document).ready(function() {
 					// Create empty edge geometry
 					edge_geometry = create_edge_geometry({}, {});
 					// Create simple material for faces
-					var solid_material = new THREE.MeshLambertMaterial( { color: 0x5ce5ff } );
+					var face_material = new THREE.MeshLambertMaterial( { color: 0x5ce5ff } );
 					// Create simple material for edges
 					var edge_material = new THREE.LineBasicMaterial( { color: 0xffffff } );
 					// Create mesh and add it to hash list of meshes
 					meshes[data.NODE_ID] = {
-						'face_mesh': new THREE.Mesh(face_geometry, solid_material),
-						'edge_mesh': new THREE.Mesh(edge_geometry, edge_material, THREE.LinePieces),
+						'obj' : objects[data.PARENT_ID],
+						'face_material': face_material,
+						'face_mesh': new THREE.Mesh(face_geometry, face_material),
+						'edge_material': edge_material,
+						'edge_mesh': new THREE.Line(edge_geometry, edge_material, THREE.LinePieces),
 						'layer_vertices_id': undefined,
 						'vertices': {},
 						'layer_edges_id': undefined,
@@ -178,13 +181,29 @@ $(document).ready(function() {
 				}
 			}
 			else if (data.CMD === 'LAYER_SET_UINT32') {
-				// TODO: fill THREE.js geometry with topology: edges and faces
 				console.log(data);
+
+				// Edges
 				if(meshes[data.NODE_ID] !== undefined && meshes[data.NODE_ID].layer_edges_id === data.LAYER_ID) {
 					console.log('Edge indexes: ', + data.VALUES[0] + ', ' + data.VALUES[1]);
+					meshes[data.NODE_ID].edges[data.ITEM_ID] = data.VALUES;
+					// Remove old edge mesh from object
+					meshes[data.NODE_ID].obj.obj.remove(meshes[data.NODE_ID].edge_mesh);
+					// Set THREE.js new edge mesh
+					edge_geometry = create_edge_geometry(meshes[data.NODE_ID].vertices, meshes[data.NODE_ID].edges);
+					meshes[data.NODE_ID].edge_mesh = new THREE.Line(edge_geometry, meshes[data.NODE_ID].edge_material, THREE.LinePieces);
+					meshes[data.NODE_ID].obj.obj.add(meshes[data.NODE_ID].edge_mesh);
 				}
+				// Faces
 				else if(meshes[data.NODE_ID] !== undefined && meshes[data.NODE_ID].layer_faces_id === data.LAYER_ID) {
-					console.log('Faces indexes: ', + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2] + ', ' + data.VALUES[3]);	
+					console.log('Faces indexes: ', + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2] + ', ' + data.VALUES[3]);
+					meshes[data.NODE_ID].faces[data.ITEM_ID] = data.VALUES;
+					// Remove old face mesh from object
+					meshes[data.NODE_ID].obj.obj.remove(meshes[data.NODE_ID].face_mesh);
+					// Set THREE.js new face mesh
+					face_geometry = create_face_geometry(meshes[data.NODE_ID].vertices, meshes[data.NODE_ID].faces);
+					meshes[data.NODE_ID].face_mesh = new THREE.Mesh(face_geometry, meshes[data.NODE_ID].face_material);
+					meshes[data.NODE_ID].obj.obj.add(meshes[data.NODE_ID].face_mesh);
 				}
 			}
 			else if (data.CMD === 'LAYER_SET_REAL32') {
@@ -192,12 +211,31 @@ $(document).ready(function() {
 				console.log(data);
 			}
 			else if (data.CMD === 'LAYER_SET_REAL64') {
-				// TODO: fill THREE.js geometry with vertex position
 				console.log(data);
 
 				if(meshes[data.NODE_ID] !== undefined && meshes[data.NODE_ID].layer_vertices_id === data.LAYER_ID) {
 					console.log('Vertex position: ' + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2]);
+					meshes[data.NODE_ID].vertices[data.ITEM_ID] = data.VALUES;
+					// Update or create
+					if (meshes[data.NODE_ID].vertices[data.ITEM_ID] === undefined) {
+						console.log('New vertex ...');
+					} else {
+						console.log('Updated position ...');
+						// TODO: update position of vertex
+						// meshes[data.NODE_ID].face_mesh.verticesNeedUpdate = true;
+					}
 				}
+				// Remove old face and edge mesh from object
+				meshes[data.NODE_ID].obj.obj.remove(meshes[data.NODE_ID].face_mesh);
+				meshes[data.NODE_ID].obj.obj.remove(meshes[data.NODE_ID].edge_mesh);
+				// Set THREE.js new face mesh
+				face_geometry = create_face_geometry(meshes[data.NODE_ID].vertices, meshes[data.NODE_ID].faces);
+				meshes[data.NODE_ID].face_mesh = new THREE.Mesh(face_geometry, meshes[data.NODE_ID].face_material);
+				meshes[data.NODE_ID].obj.obj.add(meshes[data.NODE_ID].face_mesh);
+				// Set THREE.js new edge mesh
+				edge_geometry = create_edge_geometry(meshes[data.NODE_ID].vertices, meshes[data.NODE_ID].edges);
+				meshes[data.NODE_ID].edge_mesh = new THREE.Line(edge_geometry, meshes[data.NODE_ID].edge_material, THREE.LinePieces);
+				meshes[data.NODE_ID].obj.obj.add(meshes[data.NODE_ID].edge_mesh);
 			}
 			else {
 				console.log(data);
@@ -280,49 +318,6 @@ $(document).ready(function() {
 		
 		event.preventDefault();
 	});
-
-	// Cube with holes in geometry and topology
-	//
-	//   4+--------+10
-	//   /|       /|
-	// 7+--------+8|
-	//  | |      | |
-	//  |0+------|-+3
-	//  |/       |/
-	// 1+--------+2
-	//
-	var cube_vertices_holes = {
-		0:  [-1.0, -1.0, -1.0],
-		1:  [ 1.0, -1.0, -1.0],
-		2:  [ 1.0,  1.0, -1.0],
-		3:  [-1.0,  1.0, -1.0],
-		4:  [-1.0, -1.0,  1.0],
-		7:  [ 1.0, -1.0,  1.0],
-		8:  [ 1.0,  1.0,  1.0],
-		10: [-1.0,  1.0,  1.0]
-	};
-	var cube_edges_holes = {
-		0:  [0, 1],
-		1:  [1, 2],
-		2:  [2, 3],
-		3:  [3, 0],
-		4:  [0, 4],
-		5:  [1, 7],
-		6:  [2, 8],
-		7:  [3, 10],
-		8:  [4, 7],
-		9:  [7, 8],
-		10: [8, 10],
-		11: [10, 4]
-	};
-	var cube_faces_holes = {
-		0: [0,  3,  2,  1],
-		1: [0,  1,  7,  4],
-		3: [1,  2,  8,  7],
-		5: [2,  3,  10, 8],
-		8: [3,  0,  4, 10],
-		9: [4,  7,  8, 10]
-	};
 
 	// Function for creating geometry
 	function create_face_geometry (vertices, faces) {
@@ -449,43 +444,6 @@ $(document).ready(function() {
 		renderer.setClearColor( 0x333333, 1);
 		var my_canvas = document.getElementById("my-canvas");
 		my_canvas.appendChild( renderer.domElement );
-
-		// Crete geometry for faces from hash table of vertices and faces
-		face_geometry = create_face_geometry(cube_vertices_holes, cube_faces_holes);
-
-		// Create simple material
-		var solid_material = new THREE.MeshLambertMaterial( { color: 0x5ce5ff } );
-		// Create solid mesh from geometry and solid material
-		var face_mesh = new THREE.Mesh( face_geometry, solid_material );
-
-		// Crete geometry for edges from hash table of vertices and edges
-		var edge_geometry = create_edge_geometry( cube_vertices_holes, cube_edges_holes );
-		// Create simple material for edges
-		var edge_material = new THREE.LineBasicMaterial( { color: 0xffffff } );
-		// Create edge mesh from geometry and edge material
-		var edge_mesh = new THREE.Line( edge_geometry, edge_material, THREE.LinePieces );
-
-		// Create 3D object of two meshes
-		obj3d = new THREE.Object3D()
-		obj3d.add( face_mesh );
-		obj3d.add( edge_mesh );
-
-		// Set position of object
-		obj3d.position.x = 0.0;
-		obj3d.position.y = 0.0;
-		obj3d.position.z = 0.0;
-		// Set scale of object
-		obj3d.scale.x = 1.0;
-		obj3d.scale.y = 1.0;
-		obj3d.scale.z = 1.0;
-		// Set rotation using quaternion
-		obj3d.quaternion.x = 0.0;
-		obj3d.quaternion.y = 0.0;
-		obj3d.quaternion.z = 0.0;
-		obj3d.quaternion.w = 1.0;
-
-		// Add 3D object to the scene
-		scene.add( obj3d );
 
 		// Create a point light
 		var pointLight1 = new THREE.PointLight( 0xffffff );

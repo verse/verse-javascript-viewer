@@ -30,217 +30,231 @@ $(document).ready(function() {
 
 		console.log(verse);
 
-		dataHandler = function dataHandler (data) {
-			// Nodes
-			if (data.CMD === 'NODE_CREATE') {
-				// Debug print
-				if (data.CUSTOM_TYPE === 123) {
-					console.log('Blender Scene Node:');
-					// Add this node to the list of scenes shared at verse server
-					scenes[data.NODE_ID] = {
-						'name': undefined,
-						'data_node_id': undefined
-					};
-				} else if (data.CUSTOM_TYPE === 124) {
-					console.log('Blender Scene Data Node:');
-					// Store the id o this node in parent node
-					scenes[data.PARENT_ID].data_node_id = data.NODE_ID;
-				// Is it object?
-				} else if (data.CUSTOM_TYPE === 125) {
-					console.log('Blender 3D Object:');
-					// Create Three.js object and add it to hash list of objects
-					objects[data.NODE_ID] = {
-						'obj': new THREE.Object3D(),
-						'tg_trans_id': undefined,
-						'tag_pos_id': undefined,
-						'tag_scale_id': undefined,
-						'tag_rot_id': undefined
-					};
-					// Add object to the scene
-					scene.add( objects[data.NODE_ID].obj );
-				// Is it Mesh?
-				} else if (data.CUSTOM_TYPE === 126) {
-					console.log('Blender Mesh:');
-					// Create empty face geometry
-					face_geometry = create_face_geometry({}, {});
-					// Create empty edge geometry
-					edge_geometry = create_edge_geometry({}, {});
-					// Create simple material for faces
-					var face_material = new THREE.MeshLambertMaterial( { color: 0x5ce5ff } );
-					// Create simple material for edges
-					var edge_material = new THREE.LineBasicMaterial( { color: 0xffffff } );
-					// Create mesh and add it to hash list of meshes
-					meshes[data.NODE_ID] = {
-						'obj' : objects[data.PARENT_ID],
-						'face_material': face_material,
-						'face_mesh': new THREE.Mesh(face_geometry, face_material),
-						'edge_material': edge_material,
-						'edge_mesh': new THREE.Line(edge_geometry, edge_material, THREE.LinePieces),
-						'layer_vertices_id': undefined,
-						'vertices': {},
-						'layer_edges_id': undefined,
-						'edges': {},
-						'layer_faces_id': undefined,
-						'faces': {}
-					};
-					// Append face_mesh to Three.js object
-					objects[data.PARENT_ID].obj.add(meshes[data.NODE_ID].face_mesh);
-					// Append edge_mesh to Three.js object
-					objects[data.PARENT_ID].obj.add(meshes[data.NODE_ID].edge_mesh);
+		nodeHandler = function nodeHandler (data) {
+			data.forEach(function(cmd) {
+				if (cmd.CMD === 'NODE_CREATE') {
+					if (cmd.CUSTOM_TYPE === 123) {
+						console.log('Blender Scene Node:');
+						// Add this node to the list of scenes shared at verse server
+						scenes[cmd.NODE_ID] = {
+							'name': undefined,
+							'data_node_id': undefined
+						};
+					} else if (cmd.CUSTOM_TYPE === 124) {
+						console.log('Blender Scene Data Node:');
+						// Store the id o this node in parent node
+						scenes[cmd.PARENT_ID].cmd_node_id = cmd.NODE_ID;
+					// Is it object?
+					} else if (cmd.CUSTOM_TYPE === 125) {
+						console.log('Blender 3D Object:');
+						// Create Three.js object and add it to hash list of objects
+						objects[cmd.NODE_ID] = {
+							'obj': new THREE.Object3D(),
+							'tg_trans_id': undefined,
+							'tag_pos_id': undefined,
+							'tag_scale_id': undefined,
+							'tag_rot_id': undefined
+						};
+						// Add object to the scene
+						scene.add( objects[cmd.NODE_ID].obj );
+					// Is it Mesh?
+					} else if (cmd.CUSTOM_TYPE === 126) {
+						console.log('Blender Mesh:');
+						// Create empty face geometry
+						face_geometry = create_face_geometry({}, {});
+						// Create empty edge geometry
+						edge_geometry = create_edge_geometry({}, {});
+						// Create simple material for faces
+						var face_material = new THREE.MeshLambertMaterial( { color: 0x5ce5ff } );
+						// Create simple material for edges
+						var edge_material = new THREE.LineBasicMaterial( { color: 0xffffff } );
+						// Create mesh and add it to hash list of meshes
+						meshes[cmd.NODE_ID] = {
+							'obj' : objects[cmd.PARENT_ID],
+							'face_material': face_material,
+							'face_mesh': new THREE.Mesh(face_geometry, face_material),
+							'edge_material': edge_material,
+							'edge_mesh': new THREE.Line(edge_geometry, edge_material, THREE.LinePieces),
+							'layer_vertices_id': undefined,
+							'vertices': {},
+							'layer_edges_id': undefined,
+							'edges': {},
+							'layer_faces_id': undefined,
+							'faces': {}
+						};
+						// Append face_mesh to Three.js object
+						objects[cmd.PARENT_ID].obj.add(meshes[cmd.NODE_ID].face_mesh);
+						// Append edge_mesh to Three.js object
+						objects[cmd.PARENT_ID].obj.add(meshes[cmd.NODE_ID].edge_mesh);
+					}
+					console.log(cmd);
+					console.log('Subscribing to node: ' + cmd.NODE_ID + ' ...');
+					// TODO: do not subscribe automaticaly to everything
+					verse.subscribeNode(cmd.NODE_ID);
+				} else {
+					console.log(cmd);
 				}
-				console.log(data);
-				console.log('Subscribing to node: ' + data.NODE_ID + ' ...');
-				// TODO: do not subscribe automaticaly to everything
-				verse.subscribeNode(data.NODE_ID);
-			}
-			// Tag Groups
-			else if (data.CMD === 'TAG_GROUP_CREATE') {
-				console.log(data);
-				console.log('Subscribing to tag_group: ' + data.TAG_GROUP_ID + ' in node: ' + data.NODE_ID + ' ...');
-				verse.subscribeTagGroup(data.NODE_ID, data.TAG_GROUP_ID);
+			});
+		}
 
-				// Is it tag group with object transformation?
-				if(objects[data.NODE_ID] !== undefined && data.CUSTOM_TYPE === 0) {
-					console.log('TagGroup with transformation created.');
-					objects[data.NODE_ID].tg_trans_id = data.TAG_GROUP_ID;
-				}
-			}
-			// Tags
-			else if (data.CMD === 'TAG_CREATE') {
-				console.log(data);
+		tagGroupHandler	= function tagGroupHandler (data) {
+			data.forEach(function(cmd) {
+				if (cmd.CMD === 'TAG_GROUP_CREATE') {
+					console.log(cmd);
+					console.log('Subscribing to tag_group: ' + cmd.TAG_GROUP_ID + ' in node: ' + cmd.NODE_ID + ' ...');
+					verse.subscribeTagGroup(cmd.NODE_ID, cmd.TAG_GROUP_ID);
 
-				// Tag including position
-				if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id !== undefined && data.CUSTOM_TYPE === 0) {
-					console.log('Tag with position created.');
-					objects[data.NODE_ID].tag_pos_id = data.TAG_ID;
+					// Is it tag group with object transformation?
+					if(objects[cmd.NODE_ID] !== undefined && cmd.CUSTOM_TYPE === 0) {
+						console.log('TagGroup with transformation created.');
+						objects[cmd.NODE_ID].tg_trans_id = cmd.TAG_GROUP_ID;
+					}
+				} else {
+					console.log(cmd);
 				}
+			});
+		}
 
-				// Tag including rotation
-				if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id !== undefined && data.CUSTOM_TYPE === 1) {
-					console.log('Tag with rotation created.');
-					objects[data.NODE_ID].tag_rot_id = data.TAG_ID;
-				}
+		tagHandler = function tagHandler (data) {
+			data.forEach(function(cmd) {
+				if (data.CMD === 'TAG_CREATE') {
+					console.log(data);
 
-				// Tag including scale
-				if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id !== undefined && data.CUSTOM_TYPE === 2) {
-					console.log('Tag with scale created.');
-					objects[data.NODE_ID].tag_scale_id = data.TAG_ID;
-				}
-			}
-			else if (data.CMD === 'TAG_SET_REAL32') {
-				// Set object position, scale and rotation
-				console.log(data);
+					// Tag including position
+					if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id !== undefined && data.CUSTOM_TYPE === 0) {
+						console.log('Tag with position created.');
+						objects[data.NODE_ID].tag_pos_id = data.TAG_ID;
+					}
 
-				// Position
-				if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id === data.TAG_GROUP_ID && objects[data.NODE_ID].tag_pos_id === data.TAG_ID) {
-					console.log('Object position: ' + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2]);
-					objects[data.NODE_ID].obj.position.x = data.VALUES[0];
-					objects[data.NODE_ID].obj.position.y = data.VALUES[1];
-					objects[data.NODE_ID].obj.position.z = data.VALUES[2];
-				// Rotation
-				} else if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id === data.TAG_GROUP_ID && objects[data.NODE_ID].tag_rot_id === data.TAG_ID) {
-					console.log('Object rotation: ' + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2] + ', ' + data.VALUES[3]);
-					objects[data.NODE_ID].obj.quaternion.x = data.VALUES[0];
-					objects[data.NODE_ID].obj.quaternion.y = data.VALUES[1];
-					objects[data.NODE_ID].obj.quaternion.z = data.VALUES[2];
-					objects[data.NODE_ID].obj.quaternion.w = data.VALUES[3];
-				// Scale
-				} else if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id === data.TAG_GROUP_ID && objects[data.NODE_ID].tag_scale_id === data.TAG_ID) {
-					console.log('Object scale: ' + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2]);
-					objects[data.NODE_ID].obj.scale.x = data.VALUES[0];
-					objects[data.NODE_ID].obj.scale.y = data.VALUES[1];
-					objects[data.NODE_ID].obj.scale.z = data.VALUES[2];
-				}
-			}
-			else if (data.CMD === 'TAG_SET_STRING8') {
-				// TODO: name of object and mesh
-				console.log(data);
-			}
-			// Layers
-			else if (data.CMD === 'LAYER_CREATE') {
-				verse.subscribeLayer(data.NODE_ID, data.LAYER_ID);
-				console.log(data);
-				console.info('Subscribing to layer: node_id = ' + data.NODE_ID + ' layer_id = ' + data.LAYER_ID);
+					// Tag including rotation
+					if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id !== undefined && data.CUSTOM_TYPE === 1) {
+						console.log('Tag with rotation created.');
+						objects[data.NODE_ID].tag_rot_id = data.TAG_ID;
+					}
 
-				// Layer with vertices was created
-				if(meshes[data.NODE_ID] !== undefined && data.CUSTOM_TYPE === 0) {
-					console.log('Layer with vertices.');
-					meshes[data.NODE_ID].layer_vertices_id = data.LAYER_ID;
-				}
-
-				// Layer with edges was created
-				if(meshes[data.NODE_ID] !== undefined && data.CUSTOM_TYPE === 1) {
-					console.log('Layer with edges.');
-					meshes[data.NODE_ID].layer_edges_id = data.LAYER_ID;
-				}
-
-				// Layer with faces was created
-				if(meshes[data.NODE_ID] !== undefined && data.CUSTOM_TYPE === 2) {
-					console.log('Layer with faces.');
-					meshes[data.NODE_ID].layer_faces_id = data.LAYER_ID;
-				}
-			}
-			else if (data.CMD === 'LAYER_SET_UINT32') {
-				console.log(data);
-
-				// Edges
-				if(meshes[data.NODE_ID] !== undefined && meshes[data.NODE_ID].layer_edges_id === data.LAYER_ID) {
-					console.log('Edge indexes: ', + data.VALUES[0] + ', ' + data.VALUES[1]);
-					meshes[data.NODE_ID].edges[data.ITEM_ID] = data.VALUES;
-					// Remove old edge mesh from object
-					meshes[data.NODE_ID].obj.obj.remove(meshes[data.NODE_ID].edge_mesh);
-					// Set THREE.js new edge mesh
-					edge_geometry = create_edge_geometry(meshes[data.NODE_ID].vertices, meshes[data.NODE_ID].edges);
-					meshes[data.NODE_ID].edge_mesh = new THREE.Line(edge_geometry, meshes[data.NODE_ID].edge_material, THREE.LinePieces);
-					meshes[data.NODE_ID].obj.obj.add(meshes[data.NODE_ID].edge_mesh);
-				}
-				// Faces
-				else if(meshes[data.NODE_ID] !== undefined && meshes[data.NODE_ID].layer_faces_id === data.LAYER_ID) {
-					console.log('Faces indexes: ', + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2] + ', ' + data.VALUES[3]);
-					meshes[data.NODE_ID].faces[data.ITEM_ID] = data.VALUES;
-					// Remove old face mesh from object
-					meshes[data.NODE_ID].obj.obj.remove(meshes[data.NODE_ID].face_mesh);
-					// Set THREE.js new face mesh
-					face_geometry = create_face_geometry(meshes[data.NODE_ID].vertices, meshes[data.NODE_ID].faces);
-					meshes[data.NODE_ID].face_mesh = new THREE.Mesh(face_geometry, meshes[data.NODE_ID].face_material);
-					meshes[data.NODE_ID].obj.obj.add(meshes[data.NODE_ID].face_mesh);
-				}
-			}
-			else if (data.CMD === 'LAYER_SET_REAL32') {
-				// TODO: bounding box
-				console.log(data);
-			}
-			else if (data.CMD === 'LAYER_SET_REAL64') {
-				console.log(data);
-
-				if(meshes[data.NODE_ID] !== undefined && meshes[data.NODE_ID].layer_vertices_id === data.LAYER_ID) {
-					console.log('Vertex position: ' + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2]);
-					meshes[data.NODE_ID].vertices[data.ITEM_ID] = data.VALUES;
-					// Update or create
-					if (meshes[data.NODE_ID].vertices[data.ITEM_ID] === undefined) {
-						console.log('New vertex ...');
-					} else {
-						console.log('Updated position ...');
-						// TODO: update position of vertex
-						// meshes[data.NODE_ID].face_mesh.verticesNeedUpdate = true;
+					// Tag including scale
+					if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id !== undefined && data.CUSTOM_TYPE === 2) {
+						console.log('Tag with scale created.');
+						objects[data.NODE_ID].tag_scale_id = data.TAG_ID;
 					}
 				}
+				else if (data.CMD === 'TAG_SET_REAL32') {
+					// Set object position, scale and rotation
+					console.log(data);
+
+					// Position
+					if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id === data.TAG_GROUP_ID && objects[data.NODE_ID].tag_pos_id === data.TAG_ID) {
+						console.log('Object position: ' + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2]);
+						objects[data.NODE_ID].obj.position.x = data.VALUES[0];
+						objects[data.NODE_ID].obj.position.y = data.VALUES[1];
+						objects[data.NODE_ID].obj.position.z = data.VALUES[2];
+					// Rotation
+					} else if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id === data.TAG_GROUP_ID && objects[data.NODE_ID].tag_rot_id === data.TAG_ID) {
+						console.log('Object rotation: ' + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2] + ', ' + data.VALUES[3]);
+						objects[data.NODE_ID].obj.quaternion.x = data.VALUES[0];
+						objects[data.NODE_ID].obj.quaternion.y = data.VALUES[1];
+						objects[data.NODE_ID].obj.quaternion.z = data.VALUES[2];
+						objects[data.NODE_ID].obj.quaternion.w = data.VALUES[3];
+					// Scale
+					} else if(objects[data.NODE_ID] !== undefined && objects[data.NODE_ID].tg_trans_id === data.TAG_GROUP_ID && objects[data.NODE_ID].tag_scale_id === data.TAG_ID) {
+						console.log('Object scale: ' + data.VALUES[0] + ', ' + data.VALUES[1] + ', ' + data.VALUES[2]);
+						objects[data.NODE_ID].obj.scale.x = data.VALUES[0];
+						objects[data.NODE_ID].obj.scale.y = data.VALUES[1];
+						objects[data.NODE_ID].obj.scale.z = data.VALUES[2];
+					}
+				} else {
+					console.log(cmd);
+				}
+			});
+		}
+
+		layerHandler = function layerHandler (data) {
+			var changed_meshes = {};
+
+			data.forEach(function(cmd) {
+				if (cmd.CMD === 'LAYER_CREATE') {
+					verse.subscribeLayer(cmd.NODE_ID, cmd.LAYER_ID);
+					console.log(cmd);
+					console.info('Subscribing to layer: node_id = ' + cmd.NODE_ID + ' layer_id = ' + cmd.LAYER_ID);
+
+					// Layer with vertices was created
+					if(meshes[cmd.NODE_ID] !== undefined && cmd.CUSTOM_TYPE === 0) {
+						console.log('Layer with vertices.');
+						meshes[cmd.NODE_ID].layer_vertices_id = cmd.LAYER_ID;
+					}
+
+					// Layer with edges was created
+					if(meshes[cmd.NODE_ID] !== undefined && cmd.CUSTOM_TYPE === 1) {
+						console.log('Layer with edges.');
+						meshes[cmd.NODE_ID].layer_edges_id = cmd.LAYER_ID;
+					}
+
+					// Layer with faces was created
+					if(meshes[cmd.NODE_ID] !== undefined && cmd.CUSTOM_TYPE === 2) {
+						console.log('Layer with faces.');
+						meshes[cmd.NODE_ID].layer_faces_id = cmd.LAYER_ID;
+					}
+				}
+				else if (cmd.CMD === 'LAYER_SET_UINT32') {
+					console.log(cmd);
+
+					// Edges
+					if(meshes[cmd.NODE_ID] !== undefined && meshes[cmd.NODE_ID].layer_edges_id === cmd.LAYER_ID) {
+						console.log('Edge indexes: ', + cmd.VALUES[0] + ', ' + cmd.VALUES[1]);
+						meshes[cmd.NODE_ID].edges[cmd.ITEM_ID] = cmd.VALUES;
+
+						changed_meshes[cmd.NODE_ID] = cmd.NODE_ID;
+					}
+					// Faces
+					else if(meshes[cmd.NODE_ID] !== undefined && meshes[cmd.NODE_ID].layer_faces_id === cmd.LAYER_ID) {
+						console.log('Faces indexes: ', + cmd.VALUES[0] + ', ' + cmd.VALUES[1] + ', ' + cmd.VALUES[2] + ', ' + cmd.VALUES[3]);
+						meshes[cmd.NODE_ID].faces[cmd.ITEM_ID] = cmd.VALUES;
+
+						changed_meshes[cmd.NODE_ID] = cmd.NODE_ID;
+					}
+				}
+				else if (cmd.CMD === 'LAYER_SET_REAL32') {
+					// TODO: bounding box
+					console.log(cmd);
+				}
+				else if (cmd.CMD === 'LAYER_SET_REAL64') {
+					console.log(cmd);
+
+					if(meshes[cmd.NODE_ID] !== undefined && meshes[cmd.NODE_ID].layer_vertices_id === cmd.LAYER_ID) {
+						console.log('Vertex position: ' + cmd.VALUES[0] + ', ' + cmd.VALUES[1] + ', ' + cmd.VALUES[2]);
+						meshes[cmd.NODE_ID].vertices[cmd.ITEM_ID] = cmd.VALUES;
+						// Update or create
+						if (meshes[cmd.NODE_ID].vertices[cmd.ITEM_ID] === undefined) {
+							console.log('New vertex ...');
+						} else {
+							console.log('Updated position ...');
+							// TODO: update position of vertex
+							// meshes[cmd.NODE_ID].face_mesh.verticesNeedUpdate = true;
+						}
+					}
+
+					changed_meshes[cmd.NODE_ID] = cmd.NODE_ID;
+				}
+				else {
+					console.log(cmd);
+				}
+			});
+
+			// Update mesh, when all layer commands from 'packet' were evaluated
+			for (var key in changed_meshes) {
 				// Remove old face and edge mesh from object
-				meshes[data.NODE_ID].obj.obj.remove(meshes[data.NODE_ID].face_mesh);
-				meshes[data.NODE_ID].obj.obj.remove(meshes[data.NODE_ID].edge_mesh);
+				meshes[key].obj.obj.remove(meshes[key].face_mesh);
+				meshes[key].obj.obj.remove(meshes[key].edge_mesh);
 				// Set THREE.js new face mesh
-				face_geometry = create_face_geometry(meshes[data.NODE_ID].vertices, meshes[data.NODE_ID].faces);
-				meshes[data.NODE_ID].face_mesh = new THREE.Mesh(face_geometry, meshes[data.NODE_ID].face_material);
-				meshes[data.NODE_ID].obj.obj.add(meshes[data.NODE_ID].face_mesh);
+				face_geometry = create_face_geometry(meshes[key].vertices, meshes[key].faces);
+				meshes[key].face_mesh = new THREE.Mesh(face_geometry, meshes[key].face_material);
+				meshes[key].obj.obj.add(meshes[key].face_mesh);
 				// Set THREE.js new edge mesh
-				edge_geometry = create_edge_geometry(meshes[data.NODE_ID].vertices, meshes[data.NODE_ID].edges);
-				meshes[data.NODE_ID].edge_mesh = new THREE.Line(edge_geometry, meshes[data.NODE_ID].edge_material, THREE.LinePieces);
-				meshes[data.NODE_ID].obj.obj.add(meshes[data.NODE_ID].edge_mesh);
-			}
-			else {
-				console.log(data);
-			}
-		};
+				edge_geometry = create_edge_geometry(meshes[key].vertices, meshes[key].edges);
+				meshes[key].edge_mesh = new THREE.Line(edge_geometry, meshes[key].edge_material, THREE.LinePieces);
+				meshes[key].obj.obj.add(meshes[key].edge_mesh);
+			};
+		}
 
 		// Get values from form
 		var username = $('#username').val();
@@ -252,7 +266,10 @@ $(document).ready(function() {
 			version: 'v1.verse.tul.cz',
 			username: username,
 			passwd: password,
-			dataCallback: dataHandler,
+			nodeCallback: nodeHandler,
+			tagGroupCallback: tagGroupHandler,
+			tagCallback: tagHandler,
+			layerCallback: layerHandler,
 			connectionTerminatedCallback: function(event) {
 				/*
 				 * callback function for end of session handling

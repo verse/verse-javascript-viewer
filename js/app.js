@@ -235,6 +235,30 @@ $(document).ready(function() {
 
 					changed_meshes[cmd.NODE_ID] = cmd.NODE_ID;
 				}
+				else if (cmd.CMD === 'LAYER_UNSET') {
+					console.log(data);
+
+					// Vertices
+					if(meshes[cmd.NODE_ID] !== undefined && meshes[cmd.NODE_ID].layer_vertices_id === cmd.LAYER_ID) {
+						console.log('Deleted vertex:', + cmd.ITEM_ID);
+						delete meshes[cmd.NODE_ID].vertices[cmd.ITEM_ID];
+						changed_meshes[cmd.NODE_ID] = cmd.NODE_ID;
+					}
+					// Edges
+					else if(meshes[cmd.NODE_ID] !== undefined && meshes[cmd.NODE_ID].layer_edges_id === cmd.LAYER_ID) {
+						console.log('Deleted edge: ', + cmd.ITEM_ID);
+						delete meshes[cmd.NODE_ID].edges[cmd.ITEM_ID];
+						changed_meshes[cmd.NODE_ID] = cmd.NODE_ID;
+					}
+					// Faces
+					else if(meshes[cmd.NODE_ID] !== undefined && meshes[cmd.NODE_ID].layer_faces_id === cmd.LAYER_ID) {
+						console.log('Deleted face: ', + cmd.ITEM_ID);
+						delete meshes[cmd.NODE_ID].faces[cmd.ITEM_ID];
+						changed_meshes[cmd.NODE_ID] = cmd.NODE_ID;
+					} else {
+						console.log('Other unsetting.')
+					}
+				}
 				else {
 					console.log(cmd);
 				}

@@ -383,37 +383,39 @@ $(document).ready(function() {
 		};
 		// Add faces to geometry
 		for (var key in faces) {
-			// Triangle
-			if(faces[key].length === 3) {
-				geometry.faces.push(
-					new THREE.Face3(
-						la_table[ faces[key][0] ],
-						la_table[ faces[key][1] ],
-						la_table[ faces[key][2] ]
-						)
-					);
-			// Quad
-			} else if (faces[key].length === 4) {
-				//
-				// 0 +--+ 3
-				//   |\ |
-				//   | \|
-				// 1 +--+ 2
-				//
-				geometry.faces.push(
-					new THREE.Face3(
-						la_table[ faces[key][0] ],
-						la_table[ faces[key][1] ],
-						la_table[ faces[key][2] ]
-						)
-					);
-				geometry.faces.push(
-					new THREE.Face3(
-						la_table[ faces[key][0] ],
-						la_table[ faces[key][2] ],
-						la_table[ faces[key][3] ]
-						)
-					);
+			if (faces[key].length === 4) {
+				// Triangle
+				if(faces[key][3] === 0) {
+					geometry.faces.push(
+						new THREE.Face3(
+							la_table[ faces[key][0] ],
+							la_table[ faces[key][1] ],
+							la_table[ faces[key][2] ]
+							)
+						);
+				// Quad
+				} else {
+					//
+					// 0 +--+ 3
+					//   |\ |
+					//   | \|
+					// 1 +--+ 2
+					//
+					geometry.faces.push(
+						new THREE.Face3(
+							la_table[ faces[key][0] ],
+							la_table[ faces[key][1] ],
+							la_table[ faces[key][2] ]
+							)
+						);
+					geometry.faces.push(
+						new THREE.Face3(
+							la_table[ faces[key][0] ],
+							la_table[ faces[key][2] ],
+							la_table[ faces[key][3] ]
+							)
+						);
+				}
 			}
 		};
 		// Recompute normal vectors of faces

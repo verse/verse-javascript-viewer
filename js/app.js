@@ -26,7 +26,7 @@ $(document).ready(function() {
 
 	$('.form-login').submit(function(event) {
 		// Connect to Verse server
-		var config, dataHandler;
+		var config, dataHandler, prio = 128;
 
 		console.log(verse);
 
@@ -90,7 +90,7 @@ $(document).ready(function() {
 					console.log(cmd);
 					console.log('Subscribing to node: ' + cmd.NODE_ID + ' ...');
 					// TODO: do not subscribe automaticaly to everything
-					verse.subscribeNode(cmd.NODE_ID);
+					verse.nodeSubscribe(prio, cmd.NODE_ID);
 				} else {
 					console.log(cmd);
 				}
@@ -102,7 +102,7 @@ $(document).ready(function() {
 				if (cmd.CMD === 'TAG_GROUP_CREATE') {
 					console.log(cmd);
 					console.log('Subscribing to tag_group: ' + cmd.TAG_GROUP_ID + ' in node: ' + cmd.NODE_ID + ' ...');
-					verse.subscribeTagGroup(cmd.NODE_ID, cmd.TAG_GROUP_ID);
+					verse.tagGroupSubscribe(prio, cmd.NODE_ID, cmd.TAG_GROUP_ID);
 
 					// Is it tag group with object transformation?
 					if(objects[cmd.NODE_ID] !== undefined && cmd.CUSTOM_TYPE === 0) {
@@ -173,7 +173,7 @@ $(document).ready(function() {
 
 			data.forEach(function(cmd) {
 				if (cmd.CMD === 'LAYER_CREATE') {
-					verse.subscribeLayer(cmd.NODE_ID, cmd.LAYER_ID);
+					verse.layerSubscribe(prio, cmd.NODE_ID, cmd.LAYER_ID);
 					console.log(cmd);
 					console.info('Subscribing to layer: node_id = ' + cmd.NODE_ID + ' layer_id = ' + cmd.LAYER_ID);
 

@@ -30,6 +30,6 @@
     "threejs": "*"
   },
   "devDependencies": {
-    "verse": "*"
+    "verse": "0.2.0"
   }
 }
